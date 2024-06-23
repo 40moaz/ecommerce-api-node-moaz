@@ -1,11 +1,13 @@
 const express = require("express");
-const app = express();
+const app = express();const cors = require('cors');
+const cors = require('cors');
 const mongoose = require("mongoose");
 
 // Correctly encode the password
 const password = encodeURIComponent('Moaz@Ali123');
 const url = `mongodb+srv://amoaz14109:${password}@ecommerce-api.rqbexrw.mongodb.net/?retryWrites=true&w=majority&appName=eCommerce-api`;
-
+// Allow requests from all origins
+app.use(cors());
 // Connect to MongoDB
 mongoose.connect(url, {
     useNewUrlParser: true,

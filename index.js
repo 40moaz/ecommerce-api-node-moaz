@@ -30,7 +30,7 @@ const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
 app.get("/", (req, res) => {
-    res.send("<h1>Hi There</h1> <p>You can get products or signup & login</p>")
+    res.send("<h1>Hi There</h1> <p>You can get products or signup & login.</p>")
 })
 
 app.listen(3000, () => {

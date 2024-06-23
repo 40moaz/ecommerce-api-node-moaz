@@ -7,8 +7,8 @@ const router = express.Router();
 // Create a new user account
 router.post('/signup', async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const user = new User({ username, password }); // Store password as plain text
+        const { fullName, email, phone, date_of_birth, profileImage, password } = req.body;
+        const user = new User({ fullName, email, phone, date_of_birth, profileImage, password }); // Store password as plain text
         await user.save();
         res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
@@ -19,10 +19,10 @@ router.post('/signup', async (req, res) => {
 // User login (no password encryption is used)
 router.post('/login', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
         // Check if the user exists in the database
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

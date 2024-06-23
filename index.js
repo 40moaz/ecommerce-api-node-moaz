@@ -4,13 +4,12 @@ const mongoose = require("mongoose");
 
 // Correctly encode the password
 const password = encodeURIComponent('Moaz@Ali123');
-const url = `mongodb+srv://amoaz14109:${password}@ecommerce-api.rqbexrw.mongodb.net/`;
+const url = `mongodb+srv://amoaz14109:${password}@ecommerce-api.rqbexrw.mongodb.net/?retryWrites=true&w=majority&appName=eCommerce-api`;
 
 // Connect to MongoDB
 mongoose.connect(url, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Optional: reduce the server selection timeout
 })
     .then(() => {
         console.log('MongoDB connected');
@@ -18,19 +17,6 @@ mongoose.connect(url, {
     .catch(err => {
         console.error('MongoDB connection error:', err);
     });
-
-mongoose.connection.on('connected', () => {
-    console.log('Mongoose connected to DB');
-});
-
-mongoose.connection.on('error', (err) => {
-    console.error('Mongoose connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('Mongoose disconnected');
-});
-
 app.use(express.json());
 
 // API endpoints

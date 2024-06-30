@@ -1,54 +1,9 @@
 const express = require( 'express' );
 const User = require( '../models/User' );
 const jwt = require( 'jsonwebtoken' );
+const bcrypt = require( 'bcryptjs' ); // Library for password hashing
 
 const router = express.Router();
-
-// Create a new user account
-router.post( '/signup', async ( req, res ) =>
-{
-    try
-    {
-        const { fullName, email, phone, date_of_birth, profileImage, password, username } = req.body;
-        const user = new User( { fullName, email, phone, date_of_birth, profileImage, password, username } ); // Store password as plain text
-        await user.save();
-        res.status( 201 ).json( { message: 'User created successfully' } );
-    } catch ( error )
-    {
-        res.status( 500 ).json( { message: 'Failed to create user', error: error.message } );
-    }
-} );
-
-// User login (no password encryption is used)
-router.post( '/login', async ( req, res ) =>
-{
-    try
-    {
-        const { email, password } = req.body;
-
-        // Check if the user exists in the database
-        const user = await User.findOne( { email } );
-        if ( !user )
-        {
-            return res.status( 404 ).json( { message: 'User not found' } );
-        }
-
-        // Compare the provided password with the stored password (plaintext)
-        if ( user.password !== password )
-        {
-            return res.status( 401 ).json( { message: 'Invalid credentials' } );
-        }
-
-        // Generate a JWT token with user ID and set expiration time
-        const token = jwt.sign( { userId: user._id }, 'mySuperSecretKey123!@#', { expiresIn: '1h' } );
-
-        // Return success message and token
-        res.json( { message: 'Login successful', token } );
-    } catch ( error )
-    {
-        res.status( 500 ).json( { message: 'Failed to login', error: error.message } );
-    }
-} );
 
 // Middleware to verify token
 function verifyToken ( req, res, next )
@@ -75,6 +30,57 @@ function verifyToken ( req, res, next )
         res.status( 400 ).json( { message: 'Invalid token.' } );
     }
 }
+
+// Create a new user account
+router.post( '/signup', async ( req, res ) =>
+{
+    try
+    {
+        const { fullName, email, phone, date_of_birth, profileImage, password, username } = req.body;
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash( password, 10 ); // 10 is the salt rounds
+
+        const user = new User( { fullName, email, phone, date_of_birth, profileImage, password: hashedPassword, username } );
+        await user.save();
+        res.status( 201 ).json( { message: 'User created successfully' } );
+    } catch ( error )
+    {
+        res.status( 500 ).json( { message: 'Failed to create user', error: error.message } );
+    }
+} );
+
+// User login
+router.post( '/login', async ( req, res ) =>
+{
+    try
+    {
+        const { email, password } = req.body;
+
+        // Check if the user exists in the database
+        const user = await User.findOne( { email } );
+        if ( !user )
+        {
+            return res.status( 404 ).json( { message: 'User not found' } );
+        }
+
+        // Compare the provided password with the stored hashed password
+        const isPasswordValid = await bcrypt.compare( password, user.password );
+        if ( !isPasswordValid )
+        {
+            return res.status( 401 ).json( { message: 'Invalid credentials' } );
+        }
+
+        // Generate a JWT token with user ID and set expiration time
+        const token = jwt.sign( { userId: user._id }, 'mySuperSecretKey123!@#', { expiresIn: '1h' } );
+
+        // Return success message and token
+        res.json( { message: 'Login successful', token } );
+    } catch ( error )
+    {
+        res.status( 500 ).json( { message: 'Failed to login', error: error.message } );
+    }
+} );
 
 // Protected route to fetch current user profile
 router.get( '/me', verifyToken, async ( req, res ) =>
@@ -124,6 +130,38 @@ router.put( '/me', verifyToken, async ( req, res ) =>
     } catch ( error )
     {
         res.status( 500 ).json( { message: 'Failed to update user profile', error: error.message } );
+    }
+} );
+
+// Update password
+router.put( '/update-password', verifyToken, async ( req, res ) =>
+{
+    try
+    {
+        const { currentPassword, newPassword } = req.body;
+
+        // Fetch the user from the database
+        const user = await User.findById( req.user.userId );
+        if ( !user )
+        {
+            return res.status( 404 ).json( { message: 'User not found' } );
+        }
+
+        // Compare the current password with the stored hashed password
+        const isPasswordValid = await bcrypt.compare( currentPassword, user.password );
+        if ( !isPasswordValid )
+        {
+            return res.status( 401 ).json( { message: 'Current password is incorrect' } );
+        }
+
+        // Hash the new password
+        const hashedNewPassword = await bcrypt.hash( newPassword, 10 ); // 10 is the salt rounds
+        user.password = hashedNewPassword;
+        await user.save();
+        res.json( { message: 'Password updated successfully' } );
+    } catch ( error )
+    {
+        res.status( 500 ).json( { message: 'Failed to update password', error: error.message } );
     }
 } );
 

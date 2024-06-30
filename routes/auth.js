@@ -98,4 +98,33 @@ router.get( '/me', verifyToken, async ( req, res ) =>
     }
 } );
 
+// Update user profile
+router.put( '/me', verifyToken, async ( req, res ) =>
+{
+    try
+    {
+        const { fullName, email, phone, date_of_birth, profileImage, username } = req.body;
+
+        // Find user and update their details
+        const user = await User.findByIdAndUpdate(
+            req.user.userId,
+            { fullName, email, phone, date_of_birth, profileImage, username },
+            { new: true, runValidators: true } // Return the updated document and run validation
+        ).select( '-password' ); // Exclude password field
+
+        if ( !user )
+        {
+            return res.status( 404 ).json( { message: 'User not found' } );
+        }
+
+        res.json( {
+            message: 'User profile updated successfully',
+            user: user
+        } );
+    } catch ( error )
+    {
+        res.status( 500 ).json( { message: 'Failed to update user profile', error: error.message } );
+    }
+} );
+
 module.exports = router;

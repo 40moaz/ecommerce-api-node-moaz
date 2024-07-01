@@ -165,4 +165,25 @@ router.put( '/update-password', verifyToken, async ( req, res ) =>
     }
 } );
 
+// DELETE route to delete user account
+router.delete( '/me', verifyToken, async ( req, res ) =>
+{
+    try
+    {
+        const userId = req.user.userId;
+
+        // Find user by ID and delete
+        const user = await User.findByIdAndDelete( userId );
+
+        if ( !user )
+        {
+            return res.status( 404 ).json( { message: 'User not found' } );
+        }
+
+        res.json( { message: 'User deleted successfully' } );
+    } catch ( error )
+    {
+        res.status( 500 ).json( { message: 'Failed to delete user', error: error.message } );
+    }
+} );
 module.exports = router;

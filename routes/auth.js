@@ -171,10 +171,8 @@ router.delete( '/me', verifyToken, async ( req, res ) =>
     try
     {
         const userId = req.user.userId;
-
         // Find user by ID and delete
         const user = await User.findByIdAndDelete( userId );
-
         if ( !user )
         {
             return res.status( 404 ).json( { message: 'User not found' } );
